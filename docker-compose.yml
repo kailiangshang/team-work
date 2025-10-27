@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .  # 使用项目根目录作为构建上下文
+      dockerfile: backend/Dockerfile
+      args:
+        - APP_UID=${HOST_UID:-1000}
+        - APP_GID=${HOST_GID:-1000}
+    container_name: teamwork-backend
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./backend/app:/app/app
+    environment:
+      - DATABASE_TYPE=${DATABASE_TYPE:-postgresql}
+      - SQLITE_PATH=${SQLITE_PATH:-/app/data/db/teamwork.db}
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-teamwork}
+      - DB_USERNAME=${DB_USERNAME:-teamwork_user}
+      - DB_PASSWORD=${DB_PASSWORD:-teamwork_pass}
+      - LLM_API_BASE_URL=${LLM_API_BASE_URL}
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_MODEL_NAME=${LLM_MODEL_NAME:-gpt-4}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.7}
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-2000}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - UPLOAD_DIR=${UPLOAD_DIR:-/app/data/uploads}
+      - OUTPUT_DIR=${OUTPUT_DIR:-/app/data/outputs}
+    depends_on:
+      - postgres
+    networks:
+      - teamwork-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .  # 使用项目根目录作为构建上下文
+      dockerfile: frontend/Dockerfile
+      args:
+        - APP_UID=${HOST_UID:-1000}
+        - APP_GID=${HOST_GID:-1000}
+    container_name: teamwork-frontend
+    ports:
+      - "${FRONTEND_PORT:-7860}:7860"
+    volumes:
+      - ./frontend:/app
+    environment:
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - teamwork-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:14-alpine
+    container_name: teamwork-postgres
+    environment:
+      - POSTGRES_DB=${DB_NAME:-teamwork}
+      - POSTGRES_USER=${DB_USERNAME:-teamwork_user}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-teamwork_pass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - teamwork-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-teamwork_user} -d ${DB_NAME:-teamwork}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  teamwork-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
