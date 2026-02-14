@@ -1,0 +1,48 @@
+[project]
+name = "twork-core"
+version = "1.0.0"
+description = "TWork Core Library - 项目管理多Agent模拟核心库"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "asyncio",
+    "typing-extensions>=4.0.0",
+    "pydantic>=2.0.0",
+    "openai>=1.0.0",
+    "redis>=4.0.0",
+    "falkordb>=1.0.0",
+    "python-docx>=0.8.11",
+    "pypdf>=3.0.0",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=4.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["*"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "I", "N", "W"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
